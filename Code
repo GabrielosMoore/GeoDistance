@@ -1,0 +1,79 @@
+import math
+import requests
+
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points 
+    on the earth (specified in decimal degrees)
+    """
+    # Convert decimal degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+
+    # Haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+
+    # Distance Calculator
+    km = 6371 * c
+    return km
+
+def get_coordinates_from_address(address):
+    try:
+        # Make a request to geocoding API
+        api_key = '8dd8c8039fee4fad879737efcfaab7de' 
+        url = f'https://api.opencagedata.com/geocode/v1/json?q={address}&key={api_key}'
+        response = requests.get(url)
+        data = response.json()
+        
+        # Extract latitude and longitude from the response
+        if data['results']:
+            lat = data['results'][0]['geometry']['lat']
+            lon = data['results'][0]['geometry']['lng']
+            return lat, lon
+        else:
+            print("Couldn't find coordinates for the provided address.")
+            return None, None
+    except Exception as e:
+        print("Error occurred while fetching coordinates:", e)
+        return None, None
+
+def get_coordinates():
+    try:
+        address1 = input("Enter address or location name of point 1: ")
+        address2 = input("Enter address or location name of point 2: ")
+
+        # Get coordinates from addresses
+        lat1, lon1 = get_coordinates_from_address(address1)
+        lat2, lon2 = get_coordinates_from_address(address2)
+
+        if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+            return get_coordinates()
+
+        return lat1, lon1, lat2, lon2
+    except ValueError:
+        print("Please enter valid input.")
+        return get_coordinates()
+
+def suggest_transport(distance):
+    if distance < 50:
+        return "You can consider walking or cycling."
+    elif distance < 500:
+        return "You can consider driving or taking a bus/train."
+    else:
+        return "You may want to consider taking a plane."
+
+def main():
+    print("Welcome to GeoDistanceCalculator!")
+    print("This program calculates the geographical distance between two points on Earth.")
+    
+    lat1, lon1, lat2, lon2 = get_coordinates()
+    
+    distance = haversine(lat1, lon1, lat2, lon2)
+    
+    print(f"The distance between the two points is approximately {distance:.2f} kilometers.")
+    print(suggest_transport(distance))
+
+if __name__ == "__main__":
+    main()
